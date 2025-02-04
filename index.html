@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>np2-wasm フロッピー 5枚対応</title>
+    <script src="https://unpkg.com/np2-wasm/dist/elements.js" type="module"></script>
+</head>
+<body>
+    <h1>PC-9801 エミュレータ (A~Eのフロッピーセット対応)</h1>
+    
+    <PC-9801 id="emulator" cpu-clock="12.5MHz" memory="2MB"></PC-9801>
+
+    <br>
+    <button onclick="loadDisk(0, 'A.d88')">A をセット (FDD1)</button>
+    <button onclick="loadDisk(1, 'A.d88')">A をセット (FDD2)</button>
+    <button onclick="loadDisk(0, 'B.d88')">B をセット (FDD1)</button>
+    <button onclick="loadDisk(1, 'B.d88')">B をセット (FDD2)</button>
+    <button onclick="loadDisk(0, 'C.d88')">C をセット (FDD1)</button>
+    <button onclick="loadDisk(1, 'C.d88')">C をセット (FDD2)</button>
+    <button onclick="loadDisk(0, 'D.d88')">D をセット (FDD1)</button>
+    <button onclick="loadDisk(1, 'D.d88')">D をセット (FDD2)</button>
+    <button onclick="loadDisk(0, 'E.d88')">E をセット (FDD1)</button>
+    <button onclick="loadDisk(1, 'E.d88')">E をセット (FDD2)</button>
+    <br>
+    <button onclick="resetEmulator()">リセット</button>
+
+    <script type="module">
+        import { NP2 } from "https://unpkg.com/np2-wasm/dist/np2-wasm.js";
+
+        const emulatorElement = document.getElementById('emulator');
+        let np2;
+
+        async function initEmulator() {
+            np2 = await NP2.create({ canvas: emulatorElement });
+            await addDisks(["A.d88", "B.d88", "C.d88", "D.d88", "E.d88"]); // すべてのディスクを事前にロード
+            np2.run();
+        }
+
+        async function addDisks(diskNames) {
+            for (const disk of diskNames) {
+                const response = await fetch(disk);
+                const data = new Uint8Array(await response.arrayBuffer());
+                np2.addDiskImage(disk, data);
+            }
+        }
+
+        async function loadDisk(drive, diskName) {
+            if (!np2) return;
+            np2.setFdd(drive, diskName);
+        }
+
+        function resetEmulator() {
+            if (np2) {
+                np2.reset();
+            }
+        }
+
+        initEmulator();
+    </script>
+</body>
+</html>
