@@ -9,11 +9,11 @@
 <body>
     <h1>NP2 Emulator</h1>
     
-    <label for="hdiFile">HDIファイルを選択:</label>
-    <input type="file" id="hdiFile" accept=".hdi" />
+    <label for="hdiFile1">HDIファイル1を選択:</label>
+    <input type="file" id="hdiFile1" accept=".hdi" />
     
-    <label for="dosFile">DOSファイルを選択:</label>
-    <input type="file" id="dosFile" accept=".exe,.com" />
+    <label for="hdiFile2">HDIファイル2を選択:</label>
+    <input type="file" id="hdiFile2" accept=".hdi" />
     
     <button id="startEmulator">エミュレーターを起動</button>
     
@@ -21,23 +21,21 @@
 
     <script>
         document.getElementById('startEmulator').addEventListener('click', async () => {
-            const hdiFileInput = document.getElementById('hdiFile');
-            const dosFileInput = document.getElementById('dosFile');
+            const hdiFileInput1 = document.getElementById('hdiFile1');
+            const hdiFileInput2 = document.getElementById('hdiFile2');
 
-            if (hdiFileInput.files.length === 0 || dosFileInput.files.length === 0) {
-                alert('HDIファイルとDOSファイルの両方を選択してください。');
+            if (hdiFileInput1.files.length === 0 || hdiFileInput2.files.length === 0) {
+                alert('両方のHDIファイルを選択してください。');
                 return;
             }
 
-            const hdiFile = hdiFileInput.files[0];
-            const dosFile = dosFileInput.files[0];
+            const hdiFile1 = hdiFileInput1.files[0];
+            const hdiFile2 = hdiFileInput2.files[0];
 
             // HDIファイルをエミュレーターに設定
             const emulator = document.getElementById('emulator');
-            emulator.setAttribute('hdi', URL.createObjectURL(hdiFile));
-
-            // DOSファイルをエミュレーターに設定
-            emulator.setAttribute('fdd1', URL.createObjectURL(dosFile));
+            emulator.setAttribute('hdi1', URL.createObjectURL(hdiFile1));
+            emulator.setAttribute('hdi2', URL.createObjectURL(hdiFile2));
 
             // エミュレーターを起動
             emulator.start();
