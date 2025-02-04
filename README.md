@@ -1,7 +1,7 @@
 > ```
 >使い方
 > このgithub pagesにアクセス：https://emon2358.github.io/leaf98/
-> 次にこのリポジトリから、hdiをダウンロード
+> 次にこのリポジトリから、zipをダウンロード
 > サイトに行ってhdiをDrag & drop
 > 二回enterを押す
 > game.exeで起動
