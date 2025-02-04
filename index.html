@@ -14,6 +14,7 @@
             line-height: 200px;
             font-size: 20px;
             margin-bottom: 10px;
+            color: #555;
         }
     </style>
 </head>
@@ -30,27 +31,36 @@
 
         dropzone.addEventListener("dragover", (e) => {
             e.preventDefault();
-            e.dataTransfer.dropEffect = "copy";
+            dropzone.style.borderColor = "#00f"; // 青色に変更
+        });
+
+        dropzone.addEventListener("dragleave", () => {
+            dropzone.style.borderColor = "#ccc"; // 元の色に戻す
         });
 
         dropzone.addEventListener("drop", async (e) => {
             e.preventDefault();
+            dropzone.style.borderColor = "#ccc";
+
             const files = Array.from(e.dataTransfer.files).filter(file => file.name.endsWith(".d88")).slice(0, 5);
             if (files.length === 0) {
                 alert("対応するファイル形式は .d88 のみです。");
                 return;
             }
 
-            files.forEach((file, i) => {
+            // 読み込んだファイルを fdd1 ～ fdd5 にセット
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
                 const reader = new FileReader();
-                reader.onload = (event) => {
-                    const blob = new Blob([event.target.result], { type: "application/octet-stream" });
-                    const url = URL.createObjectURL(blob);
-                    emulator.setAttribute(`fdd${i + 1}`, url);
+
+                reader.onload = async (event) => {
+                    const arrayBuffer = event.target.result;
+                    emulator[`fdd${i + 1}`] = arrayBuffer;
                     console.log(`FDD${i + 1} にセット: ${file.name}`);
                 };
+
                 reader.readAsArrayBuffer(file);
-            });
+            }
         });
     </script>
 
