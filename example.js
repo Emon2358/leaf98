@@ -1,8 +1,8 @@
-import {NP2, NP21} from "../dist/np2-wasm.js";
+import { NP2, NP21 } from "../dist/np2-wasm.js";
 
 const canvas = document.getElementById('canvas');
 const droparea = document.getElementById('droparea');
-const fddSelects = ['fdd1', 'fdd2'].map((id) => document.getElementById(id ));
+const fddSelects = ['fdd1', 'fdd2'].map((id) => document.getElementById(id));
 
 let np2;
 let currentInputMode = 'english'; // 初期入力モードを英語に設定
