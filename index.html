@@ -1,42 +1,37 @@
-<!doctype html>
+<!DOCTYPE html>
 <html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>NP2-wasm demo</title>
+<head>
+    <meta charset="UTF-8">
+    <title>np2-wasm Emulator</title>
     <style>
-      .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
-      div.emscripten { text-align: center; }
-      div.emscripten_border { border: 1px solid black; }
-      /* the canvas *must not* have any border or padding, or mouse coords will be wrong */
-      canvas.emscripten { border: 0px none; }
-      @media screen and (min-resolution: 2dppx) {
-        canvas { image-rendering: pixelated; image-rendering: -moz-crisp-edges; }
-      }
+        #canvas {
+            width: 100%;
+            max-width: 800px;
+            height: 450px;
+            display: block;
+            background: black;
+        }
+        #controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 10px;
+        }
+        button {
+            font-size: 16px;
+            margin: 5px;
+            padding: 10px;
+        }
     </style>
-  </head>
-  <body>
-    <div class="emscripten_border" id="droparea">
-      <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+</head>
+<body>
+    <canvas id="canvas"></canvas> <!-- The emulator screen -->
+    
+    <div id="controls">
+        <input type="file" id="fileInput" accept=".d88,.hdi,.fdi,.hdd" />
+        <button id="resetBtn">Reset</button>
     </div>
-    <hr/>
-    <div class="emscripten">
-      <input type="checkbox" id="resize">Resize canvas
-      <input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer
-      &nbsp;&nbsp;&nbsp;
-      <input type="button" value="Fullscreen" onclick="Module.requestFullScreen(document.getElementById('pointerLock').checked,
-                                                                                document.getElementById('resize').checked)">
-    </div>
-    <div>
-      FDD1:
-      <select id="fdd1">
-      <option value="">(ejected)</option>
-      </select>
-      FDD2:
-      <select id="fdd2">
-      <option value="">(ejected)</option>
-      </select>
-    </div>
+
     <script type="module" src="example.js"></script>
-  </body>
+</body>
 </html>
