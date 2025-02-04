@@ -1,16 +1,55 @@
 <!DOCTYPE html>
-<html lang='ja'>
+<html lang="ja">
 <head>
-<meta charset='UTF-8'>
-<title>雫 (Shizuku)</title>
-<script src='https://cdn.jsdelivr.net/gh/js-dos/js-dos@latest/js-dos.js'></script>
+    <meta charset="UTF-8">
+    <title>DOSゲームプレイヤー</title>
+    <script src="https://cdn.jsdelivr.net/gh/js-dos/js-dos@latest/js-dos.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            text-align: center;
+        }
+        #dos {
+            border: 1px solid #000;
+            width: 800px;
+            height: 600px;
+            margin: 0 auto;
+        }
+    </style>
 </head>
 <body>
-<h1>雫 (Shizuku)</h1>
-<div id='dos'></div>
-<script>
-DOS.init({canvas: document.getElementById('dos'), autostart: true});
-DOS.load('【PC98】雫shizuku.hdi');
-</script>
+    <h1>DOSゲームプレイヤー</h1>
+    <div id="dos"></div>
+    <input type="file" id="upload" accept=".hdi" />
+    <button id="start">ゲームを開始</button>
+
+    <script>
+        let gameFile;
+
+        document.getElementById('upload').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (file) {
+                gameFile = file;
+                alert('ゲームファイルが選択されました: ' + file.name);
+            }
+        });
+
+        document.getElementById('start').addEventListener('click', function() {
+            if (gameFile) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const arrayBuffer = e.target.result;
+                    const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
+                    const url = URL.createObjectURL(blob);
+                    DOS.init({ canvas: document.getElementById('dos'), autostart: true });
+                    DOS.load(url);
+                };
+                reader.readAsArrayBuffer(gameFile);
+            } else {
+                alert('ゲームファイルをアップロードしてください。');
+            }
+        });
+    </script>
 </body>
 </html>
