@@ -1,56 +1,54 @@
-import { NP2, NP21 } from "https://unpkg.com/np2-wasm/dist/np2-wasm.js";
+import { NP2 } from "https://unpkg.com/np2-wasm/dist/np2-wasm.js";
 
 const canvas = document.getElementById('canvas');
 const fileInput = document.getElementById('fileInput');
-const resetBtn = document.getElementById('resetBtn');
 
 let np2;
 
-// エミュレータの初期化
+// エミュレータを作成
 async function initEmulator() {
-    if (!np2) {
-        np2 = await NP2.create({ canvas });
-    }
+    np2 = await NP2.create({ canvas });
 }
 
-// ファイルが選択された時にエミュレータを起動
+// ディスクイメージをロードして起動
+async function loadAndRunDisk(imageData, fileName) {
+    const data = new Uint8Array(imageData);
+
+    // ディスクを追加
+    np2.addDiskImage(fileName, data);
+
+    // FD0にセット
+    np2.setFdd(0, fileName);
+
+    // エミュレータを実行
+    np2.run();
+}
+
+// 初期化とデフォルトディスクのロード
+async function startEmulator() {
+    await initEmulator();
+
+    // デフォルトで 'image.d88' をロード
+    const resp = await fetch('image.d88');
+    const imageData = await resp.arrayBuffer();
+    await loadAndRunDisk(imageData, 'image.d88');
+}
+
+// ファイル選択時の処理
 fileInput.addEventListener('change', async (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = async (e) => {
-        const data = new Uint8Array(e.target.result);
-        const fileName = file.name;
-
         if (!np2) {
             await initEmulator();
         }
-
-        // HDIまたはFDIの場合はHDD、D88の場合はFDDにセット
-        if (fileName.endsWith('.hdi') || fileName.endsWith('.hdd')) {
-            np2.addHardDiskImage(fileName, data);
-            np2.setHdd(0, fileName);
-        } else if (fileName.endsWith('.d88') || fileName.endsWith('.fdi')) {
-            np2.addDiskImage(fileName, data);
-            np2.setFdd(0, fileName);
-        } else {
-            alert('対応していないファイル形式です');
-            return;
-        }
-
-        np2.run();
+        await loadAndRunDisk(e.target.result, file.name);
     };
 
     reader.readAsArrayBuffer(file);
 });
 
-// リセットボタンでエミュレータを再起動
-resetBtn.addEventListener('click', () => {
-    if (np2) {
-        np2.reset();
-    }
-});
-
-// 初回ロード時にエミュレータを初期化
-initEmulator();
+// 初回起動
+startEmulator();
