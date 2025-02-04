@@ -1,41 +1,49 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8">
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>NP2-wasm demo</title>
+ <html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NP2 Emulator</title>
     <style>
-      .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
-      div.emscripten { text-align: center; }
-      div.emscripten_border { border: 1px solid black; }
-      canvas.emscripten { border: 0px none; }
-      @media screen and (min-resolution: 2dppx) {
-        canvas { image-rendering: pixelated; image-rendering: -moz-crisp-edges; }
-      }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+        #canvas {
+            border: 1px solid black;
+        }
+        #droparea {
+            width: 640px;
+            height: 400px;
+            border: 2px dashed #ccc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 20px;
+        }
+        select {
+            margin-top: 10px;
+        }
     </style>
-  </head>
-  <body>
-    <div class="emscripten_border" id="droparea">
-      <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
-    </div>
-    <hr/>
-    <div class="emscripten">
-      <input type="checkbox" id="resize">Resize canvas
-      <input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer
-      &nbsp;&nbsp;&nbsp;
-      <input type="button" value="Fullscreen" onclick="Module.requestFullScreen(document.getElementById('pointerLock').checked,
-                                                                                document.getElementById('resize').checked)">
-    </div>
-    <div>
-      FDD1:
-      <select id="fdd1">
-      <option value="">(ejected)</option>
-      </select>
-      FDD2:
-      <select id="fdd2">
-      <option value="">(ejected)</option>
-      </select>
-    </div>
-    <script type="module" src="example.js"></script>
-  </body>
+</head>
+<body>
+    <canvas id="canvas"></canvas>
+    <div id="droparea">ここにHDDディスクイメージをドラッグ＆ドロップしてください</div>
+    <select id="fdd1">
+        <option value="">FDD1を選択</option>
+        <option value="disk1.img">ディスク1</option>
+        <option value="disk2.img">ディスク2</option>
+    </select>
+    <select id="fdd2">
+        <option value="">FDD2を選択</option>
+        <option value="disk3.img">ディスク3</option>
+        <option value="disk4.img">ディスク4</option>
+    </select>
+    <script type="module" src="path/to/your/javascript/file.js"></script>
+</body>
 </html>
