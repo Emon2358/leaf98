@@ -2,66 +2,150 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NP2-WASM Drag & Drop</title>
-    <script src="https://unpkg.com/np2-wasm/dist/elements.js" type="module"></script>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>NP2-wasm Demo</title>
+    <script type="module" src="https://unpkg.com/np2-wasm/dist/elements.js"></script>
     <style>
-        #dropzone {
+        .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+        div.emscripten { text-align: center; }
+        div.emscripten_border { border: 1px solid black; padding: 10px; }
+        canvas { border: 0px none; image-rendering: pixelated; }
+        #droparea {
             width: 100%;
             height: 200px;
             border: 2px dashed #ccc;
             text-align: center;
             line-height: 200px;
-            font-size: 20px;
-            margin-bottom: 10px;
+            font-size: 18px;
             color: #555;
         }
     </style>
 </head>
 <body>
 
-    <div id="dropzone">ここに .d88 ファイルをドラッグ＆ドロップ（最大5つ）</div>
+    <div class="emscripten_border" id="droparea">
+        <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+    </div>
+    
+    <div class="emscripten">
+        <input type="checkbox" id="resize"> Resize canvas
+        <input type="checkbox" id="pointerLock" checked> Lock/hide mouse pointer
+        &nbsp;&nbsp;&nbsp;
+        <input type="button" value="Fullscreen" onclick="Module.requestFullScreen(
+            document.getElementById('pointerLock').checked,
+            document.getElementById('resize').checked
+        )">
+    </div>
 
-    <!-- PC-9801エミュレーション -->
-    <PC-9801 id="emulator" cpu-clock="12.5MHz" memory="2MB"></PC-9801>
+    <div>
+        FDD1: <select id="fdd1"><option value="">(ejected)</option></select>
+        FDD2: <select id="fdd2"><option value="">(ejected)</option></select>
+        FDD3: <select id="fdd3"><option value="">(ejected)</option></select>
+        FDD4: <select id="fdd4"><option value="">(ejected)</option></select>
+        FDD5: <select id="fdd5"><option value="">(ejected)</option></select>
+        HDD: <select id="hdd"><option value="">(ejected)</option></select>
+    </div>
 
-    <script>
-        const emulator = document.getElementById("emulator");
-        const dropzone = document.getElementById("dropzone");
+    <script type="module">
+        import { NP21 } from "https://unpkg.com/np2-wasm/dist/np2-wasm.js";
 
-        dropzone.addEventListener("dragover", (e) => {
+        const canvas = document.getElementById('canvas');
+        const droparea = document.getElementById('droparea');
+        const fddSelects = ['fdd1', 'fdd2', 'fdd3', 'fdd4', 'fdd5'].map(id => document.getElementById(id));
+        const hddSelect = document.getElementById('hdd');
+        let np2;
+
+        async function create_np2() {
+            if (np2) return;
+            np2 = await NP21.create({
+                canvas: canvas,
+                clk_mult: 8,
+                Latencys: 120,
+                onDiskChange: (name) => console.log(name + ' changed'),
+                onExit: () => { np2.reset(); }
+            });
+        }
+
+        function drawInitialContent() {
+            canvas.width = 640;
+            canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+            ctx.font = '20px Arial';
+
+            const text = 'Drag & drop FDD/HDD disk images here!';
+            const textWidth = ctx.measureText(text).width;
+            ctx.fillStyle = 'black';
+            ctx.fillText(text, (canvas.width - textWidth) / 2, canvas.height / 2);
+        }
+
+        async function addImage(file, is_fdd) {
+            np2.addDiskImage(file.name, new Uint8Array(await file.arrayBuffer()));
+            if (is_fdd) {
+                for (const select of fddSelects) {
+                    let option = document.createElement('option');
+                    option.value = file.name;
+                    option.textContent = file.name;
+                    select.appendChild(option);
+                }
+                if (np2.state === 'ready' && fddSelects[0].value === '') {
+                    fddSelects[0].value = file.name;
+                    np2.setFdd(0, file.name);
+                }
+            } else {
+                let option = document.createElement('option');
+                option.value = file.name;
+                option.textContent = file.name;
+                hddSelect.appendChild(option);
+                np2.setHdd(0, file.name);
+            }
+        }
+
+        droparea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            dropzone.style.borderColor = "#00f"; // 青色に変更
+            droparea.style.borderColor = "#00f";
         });
 
-        dropzone.addEventListener("dragleave", () => {
-            dropzone.style.borderColor = "#ccc"; // 元の色に戻す
+        droparea.addEventListener('dragleave', () => {
+            droparea.style.borderColor = "#ccc";
         });
 
-        dropzone.addEventListener("drop", async (e) => {
+        droparea.addEventListener('drop', async (e) => {
             e.preventDefault();
-            dropzone.style.borderColor = "#ccc";
+            droparea.style.borderColor = "#ccc";
 
-            const files = Array.from(e.dataTransfer.files).filter(file => file.name.endsWith(".d88")).slice(0, 5);
-            if (files.length === 0) {
-                alert("対応するファイル形式は .d88 のみです。");
-                return;
+            const files = Array.from(e.dataTransfer.files);
+            let readyToRun = false;
+            
+            for (const file of files) {
+                if (file.name.match(/\.(d88|88d|d98|98d|fdi|xdf|hdm|dup|2hd|tfd|img)$/i)) {
+                    await create_np2();
+                    await addImage(file, true);
+                    readyToRun = true;
+                } else if (file.name.match(/\.(thd|nhd|hdi)$/i)) {
+                    await create_np2();
+                    await addImage(file, false);
+                    readyToRun = true;
+                } else {
+                    console.log(`unrecognized image type: ${file.name}`);
+                }
             }
 
-            // 読み込んだファイルを fdd1 ～ fdd5 にセット
-            for (let i = 0; i < files.length; i++) {
-                const file = files[i];
-                const reader = new FileReader();
-
-                reader.onload = async (event) => {
-                    const arrayBuffer = event.target.result;
-                    emulator[`fdd${i + 1}`] = arrayBuffer;
-                    console.log(`FDD${i + 1} にセット: ${file.name}`);
-                };
-
-                reader.readAsArrayBuffer(file);
+            if (np2.state === 'ready' && readyToRun) {
+                np2.run();
             }
         });
+
+        for (let i = 0; i < fddSelects.length; i++) {
+            fddSelects[i].addEventListener('change', async (ev) => {
+                np2.setFdd(i, ev.target.value === '' ? null : ev.target.value);
+            });
+        }
+
+        hddSelect.addEventListener('change', async (ev) => {
+            np2.setHdd(0, ev.target.value === '' ? null : ev.target.value);
+        });
+
+        drawInitialContent();
     </script>
 
 </body>
