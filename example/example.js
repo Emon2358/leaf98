@@ -24,7 +24,7 @@ function drawInitialContent() {
     const ctx = canvas.getContext('2d');
     ctx.font = '20px Arial';
 
-    const text = 'Drag & drop HDD disk images here!';
+    const text = 'Drag & drop FDD/HDD disk images here!';
     const textWidth = ctx.measureText(text).width;
 
     const x = (canvas.width - textWidth) / 2;
@@ -34,9 +34,22 @@ function drawInitialContent() {
     ctx.fillText(text, x, y);
 }
 
-async function addImage(file) {
+async function addImage(file, is_fdd) {
     np2.addDiskImage(file.name, new Uint8Array(await file.arrayBuffer()));
-    np2.setHdd(0, file.name);
+    if (is_fdd) {
+        for (const select of fddSelects) {
+            let option = document.createElement('option');
+            option.setAttribute('value', file.name);
+            option.textContent = file.name;
+            select.appendChild(option);
+        }
+        if (np2.state === 'ready' && fddSelects[0].value === '') {
+            fddSelects[0].value = file.name;
+            np2.setFdd(0, file.name);
+        }
+    } else {
+        np2.setHdd(0, file.name);
+    }
 }
 
 droparea.addEventListener('dragover', (e) => {
@@ -52,9 +65,13 @@ droparea.addEventListener('drop', async (e) => {
     const files = e.dataTransfer.files;
     let readyToRun = false;
     for (const file of files) {
-        if (file.name.match(/\.(hdi)$/i)) {
+        if (file.name.match(/\.(d88|88d|d98|98d|fdi|xdf|hdm|dup|2hd|tfd|img)$/i)) {
             await create_np2();
-            await addImage(file);
+            await addImage(file, true);
+            readyToRun = true;
+        } else if (file.name.match(/\.(thd|nhd|hdi)$/i)) {
+            await create_np2();
+            await addImage(file, false);
             readyToRun = true;
         } else {
             console.log(`unrecognized image type: ${file.name}`);
@@ -70,8 +87,9 @@ for (let i = 0; i < fddSelects.length; i++) {
     select.addEventListener('change', (async (ev) => {
         np2.setFdd(i, ev.target.value === '' ? null : ev.target.value);
     }));
-}
+});
 
+// かなと英数の切り替え
 document.addEventListener('keydown', (event) => {
     if (event.key === '無変換') { // かなキー
         currentInputMode = 'japanese'; // 日本語入力モードに切り替え
