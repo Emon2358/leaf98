@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NP2-WASM Drag & Drop</title>
-    <script src="np2wasm.js"></script> <!-- NP2-WASMのJSファイル -->
+    <script src="https://unpkg.com/np2-wasm/dist/elements.js" type="module"></script>
     <style>
         #dropzone {
             width: 100%;
@@ -18,59 +18,41 @@
     </style>
 </head>
 <body>
-    <div id="dropzone">ここに .d88 ファイルをドラッグ＆ドロップ</div>
-    <canvas id="emulatorCanvas"></canvas>
+
+    <div id="dropzone">ここに .d88 ファイルをドラッグ＆ドロップ（最大5つ）</div>
+
+    <!-- PC-9801エミュレーション -->
+    <PC-9801 id="emulator" cpu-clock="12.5MHz" memory="2MB"></PC-9801>
 
     <script>
-        let np2 = null;
-        let fddFiles = [];
+        const emulator = document.getElementById("emulator");
+        const dropzone = document.getElementById("dropzone");
 
-        // NP2エミュレータを初期化
-        async function initNP2() {
-            np2 = await NP2.create({ canvas: document.getElementById("emulatorCanvas") });
-            console.log("NP2エミュレータ起動");
-        }
-
-        // ドラッグ＆ドロップのイベントリスナー
-        document.getElementById("dropzone").addEventListener("dragover", (e) => {
+        dropzone.addEventListener("dragover", (e) => {
             e.preventDefault();
             e.dataTransfer.dropEffect = "copy";
         });
 
-        document.getElementById("dropzone").addEventListener("drop", async (e) => {
+        dropzone.addEventListener("drop", async (e) => {
             e.preventDefault();
-            const files = e.dataTransfer.files;
-            fddFiles = [];
-
-            for (let i = 0; i < files.length && i < 5; i++) {  // 最大5つのドライブ
-                const file = files[i];
-                const reader = new FileReader();
-
-                reader.onload = async function(event) {
-                    const data = new Uint8Array(event.target.result);
-                    const fileName = file.name;
-                    
-                    console.log(`ファイル読み込み: ${fileName}`);
-
-                    fddFiles.push({ name: fileName, data });
-
-                    if (np2) {
-                        np2.addDiskImage(fileName, data);
-                        np2.setFdd(i, fileName);
-                        console.log(`FDD${i + 1} にセット: ${fileName}`);
-                    }
-
-                    if (i === files.length - 1) { // 最後のファイル処理後に実行
-                        np2.run();
-                        console.log("エミュレータ実行");
-                    }
-                };
-
-                reader.readAsArrayBuffer(file);
+            const files = Array.from(e.dataTransfer.files).filter(file => file.name.endsWith(".d88")).slice(0, 5);
+            if (files.length === 0) {
+                alert("対応するファイル形式は .d88 のみです。");
+                return;
             }
-        });
 
-        initNP2();
+            files.forEach((file, i) => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const blob = new Blob([event.target.result], { type: "application/octet-stream" });
+                    const url = URL.createObjectURL(blob);
+                    emulator.setAttribute(`fdd${i + 1}`, url);
+                    console.log(`FDD${i + 1} にセット: ${file.name}`);
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        });
     </script>
+
 </body>
 </html>
