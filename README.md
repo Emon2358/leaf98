@@ -1,6 +1,6 @@
 > ```
 >使い方
-> このgithub pagesにアクセス：https://emon2358.github.io/pc98shizuku/
+> このgithub pagesにアクセス：https://emon2358.github.io/leaf98/
 > 次にこのリポジトリから、hdiをダウンロード
 > サイトに行ってhdiをDrag & drop
 > 二回enterを押す
