@@ -9,17 +9,42 @@
 <body>
     <h1>NP2 Emulator</h1>
     
-    <label for="hdiFile1">HDIファイル1を選択:</label>
-    <input type="file" id="hdiFile1" accept=".hdi" />
+    <label for="systemFile">システムファイルを選択:</label>
+    <input type="file" id="systemFile" accept=".hdi" />
     
-    <label for="hdiFile2">HDIファイル2を選択:</label>
-    <input type="file" id="hdiFile2" accept=".hdi" />
-    
-    <button id="startEmulator">エミュレーターを起動</button>
+    <button id="loadSystemFile">システムファイルを読み込む</button>
+
+    <div id="hdiSelection" style="display: none;">
+        <label for="hdiFile1">HDIファイル1を選択:</label>
+        <input type="file" id="hdiFile1" accept=".hdi" />
+        
+        <label for="hdiFile2">HDIファイル2を選択:</label>
+        <input type="file" id="hdiFile2" accept=".hdi" />
+        
+        <button id="startEmulator">エミュレーターを起動</button>
+    </div>
     
     <PC-9801 id="emulator" cpu-clock="12.5MHz" memory="2MB"></PC-9801>
 
     <script>
+        document.getElementById('loadSystemFile').addEventListener('click', async () => {
+            const systemFileInput = document.getElementById('systemFile');
+
+            if (systemFileInput.files.length === 0) {
+                alert('システムファイルを選択してください。');
+                return;
+            }
+
+            const systemFile = systemFileInput.files[0];
+
+            // システムファイルをエミュレーターに設定
+            const emulator = document.getElementById('emulator');
+            emulator.setAttribute('hdi0', URL.createObjectURL(systemFile));
+
+            // HDIファイルの選択セクションを表示
+            document.getElementById('hdiSelection').style.display = 'block';
+        });
+
         document.getElementById('startEmulator').addEventListener('click', async () => {
             const hdiFileInput1 = document.getElementById('hdiFile1');
             const hdiFileInput2 = document.getElementById('hdiFile2');
