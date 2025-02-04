@@ -1,70 +1,41 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NP2 Emulator</title>
-    <script src="https://unpkg.com/np2-wasm/dist/elements.js" type="module"></script>
-</head>
-<body>
-    <h1>NP2 Emulator</h1>
-    
-    <label for="systemFile">システムファイルを選択:</label>
-    <input type="file" id="systemFile" accept=".hdi" />
-    
-    <button id="loadSystemFile">システムファイルを読み込む</button>
-
-    <div id="hdiSelection" style="display: none;">
-        <label for="hdiFile1">HDIファイル1を選択:</label>
-        <input type="file" id="hdiFile1" accept=".hdi" />
-        
-        <label for="hdiFile2">HDIファイル2を選択:</label>
-        <input type="file" id="hdiFile2" accept=".hdi" />
-        
-        <button id="startEmulator">エミュレーターを起動</button>
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>NP2-wasm demo</title>
+    <style>
+      .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
+      div.emscripten { text-align: center; }
+      div.emscripten_border { border: 1px solid black; }
+      canvas.emscripten { border: 0px none; }
+      @media screen and (min-resolution: 2dppx) {
+        canvas { image-rendering: pixelated; image-rendering: -moz-crisp-edges; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="emscripten_border" id="droparea">
+      <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
     </div>
-    
-    <PC-9801 id="emulator" cpu-clock="12.5MHz" memory="2MB"></PC-9801>
-
-    <script>
-        document.getElementById('loadSystemFile').addEventListener('click', async () => {
-            const systemFileInput = document.getElementById('systemFile');
-
-            if (systemFileInput.files.length === 0) {
-                alert('システムファイルを選択してください。');
-                return;
-            }
-
-            const systemFile = systemFileInput.files[0];
-
-            // システムファイルをエミュレーターに設定
-            const emulator = document.getElementById('emulator');
-            emulator.setAttribute('hdi0', URL.createObjectURL(systemFile));
-
-            // HDIファイルの選択セクションを表示
-            document.getElementById('hdiSelection').style.display = 'block';
-        });
-
-        document.getElementById('startEmulator').addEventListener('click', async () => {
-            const hdiFileInput1 = document.getElementById('hdiFile1');
-            const hdiFileInput2 = document.getElementById('hdiFile2');
-
-            if (hdiFileInput1.files.length === 0 || hdiFileInput2.files.length === 0) {
-                alert('両方のHDIファイルを選択してください。');
-                return;
-            }
-
-            const hdiFile1 = hdiFileInput1.files[0];
-            const hdiFile2 = hdiFileInput2.files[0];
-
-            // HDIファイルをエミュレーターに設定
-            const emulator = document.getElementById('emulator');
-            emulator.setAttribute('hdi1', URL.createObjectURL(hdiFile1));
-            emulator.setAttribute('hdi2', URL.createObjectURL(hdiFile2));
-
-            // エミュレーターを起動
-            emulator.start();
-        });
-    </script>
-</body>
+    <hr/>
+    <div class="emscripten">
+      <input type="checkbox" id="resize">Resize canvas
+      <input type="checkbox" id="pointerLock" checked>Lock/hide mouse pointer
+      &nbsp;&nbsp;&nbsp;
+      <input type="button" value="Fullscreen" onclick="Module.requestFullScreen(document.getElementById('pointerLock').checked,
+                                                                                document.getElementById('resize').checked)">
+    </div>
+    <div>
+      FDD1:
+      <select id="fdd1">
+      <option value="">(ejected)</option>
+      </select>
+      FDD2:
+      <select id="fdd2">
+      <option value="">(ejected)</option>
+      </select>
+    </div>
+    <script type="module" src="example.js"></script>
+  </body>
 </html>
