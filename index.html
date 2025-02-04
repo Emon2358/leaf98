@@ -3,61 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>np2-wasm フロッピーセット対応</title>
-    <script src="https://unpkg.com/np2-wasm/dist/elements.js" type="module"></script>
+    <title>NP2-WASM Drag & Drop</title>
+    <script src="np2wasm.js"></script> <!-- NP2-WASMのJSファイル -->
+    <style>
+        #dropzone {
+            width: 100%;
+            height: 200px;
+            border: 2px dashed #ccc;
+            text-align: center;
+            line-height: 200px;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>PC-9801 エミュレータ (自由にフロッピーセット)</h1>
-    
-    <PC-9801 id="emulator" cpu-clock="12.5MHz" memory="2MB"></PC-9801>
+    <div id="dropzone">ここに .d88 ファイルをドラッグ＆ドロップ</div>
+    <canvas id="emulatorCanvas"></canvas>
 
-    <br>
-    <button onclick="selectDisk(0)">FDD1 にセット</button>
-    <button onclick="selectDisk(1)">FDD2 にセット</button>
-    <br>
-    <button onclick="resetEmulator()">リセット</button>
+    <script>
+        let np2 = null;
+        let fddFiles = [];
 
-    <input type="file" id="diskInput" accept=".d88" style="display: none" onchange="loadSelectedDisk(event)">
-
-    <script type="module">
-        import { NP2 } from "https://unpkg.com/np2-wasm/dist/np2-wasm.js";
-
-        const emulatorElement = document.getElementById('emulator');
-        const diskInput = document.getElementById('diskInput');
-        let np2;
-        let currentDrive = 0; // どのドライブにセットするか記憶
-
-        async function initEmulator() {
-            np2 = await NP2.create({ canvas: emulatorElement });
-            np2.run();
+        // NP2エミュレータを初期化
+        async function initNP2() {
+            np2 = await NP2.create({ canvas: document.getElementById("emulatorCanvas") });
+            console.log("NP2エミュレータ起動");
         }
 
-        function selectDisk(drive) {
-            currentDrive = drive;
-            diskInput.click(); // ファイル選択ダイアログを開く
-        }
+        // ドラッグ＆ドロップのイベントリスナー
+        document.getElementById("dropzone").addEventListener("dragover", (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "copy";
+        });
 
-        async function loadSelectedDisk(event) {
-            const file = event.target.files[0];
-            if (!file || !np2) return;
+        document.getElementById("dropzone").addEventListener("drop", async (e) => {
+            e.preventDefault();
+            const files = e.dataTransfer.files;
+            fddFiles = [];
 
-            const reader = new FileReader();
-            reader.onload = async function(e) {
-                const data = new Uint8Array(e.target.result);
-                const fileName = file.name;
-                np2.addDiskImage(fileName, data); // ディスクをエミュレータに追加
-                np2.setFdd(currentDrive, fileName); // 選択したドライブにセット
-            };
-            reader.readAsArrayBuffer(file);
-        }
+            for (let i = 0; i < files.length && i < 5; i++) {  // 最大5つのドライブ
+                const file = files[i];
+                const reader = new FileReader();
 
-        function resetEmulator() {
-            if (np2) {
-                np2.reset();
+                reader.onload = async function(event) {
+                    const data = new Uint8Array(event.target.result);
+                    const fileName = file.name;
+                    
+                    console.log(`ファイル読み込み: ${fileName}`);
+
+                    fddFiles.push({ name: fileName, data });
+
+                    if (np2) {
+                        np2.addDiskImage(fileName, data);
+                        np2.setFdd(i, fileName);
+                        console.log(`FDD${i + 1} にセット: ${fileName}`);
+                    }
+
+                    if (i === files.length - 1) { // 最後のファイル処理後に実行
+                        np2.run();
+                        console.log("エミュレータ実行");
+                    }
+                };
+
+                reader.readAsArrayBuffer(file);
             }
-        }
+        });
 
-        initEmulator();
+        initNP2();
     </script>
 </body>
 </html>
