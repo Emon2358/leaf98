@@ -52,7 +52,7 @@
                                                                                       document.getElementById('resize').checked)">
       </div>
       <div class="droparea" id="droparea">
-        Drag & drop FDD/HDD disk images here!
+        Drag & drop FDD/HDD/ISO disk images here!
       </div>
       <div>
         FDD1:
@@ -84,21 +84,32 @@
           });
       }
 
-      async function addImage(file, is_fdd) {
-          np2.addDiskImage(file.name, new Uint8Array(await file.arrayBuffer()));
-          if (is_fdd) {
-              for (const select of fddSelects) {
-                  let option = document.createElement('option');
-                  option.setAttribute('value', file.name);
-                  option.textContent = file.name;
-                  select.appendChild(option);
-              }
-              if (np2.state === 'ready' && fddSelects[0].value === '') {
-                  fddSelects[0].value = file.name;
-                  np2.setFdd(0, file.name);
-              }
-          } else {
-              np2.setHdd(0, file.name);
+      async function addImage(file, type) {
+          const data = new Uint8Array(await file.arrayBuffer());
+
+          switch (type) {
+              case 'fdd':
+                  np2.addDiskImage(file.name, data);
+                  for (const select of fddSelects) {
+                      let option = document.createElement('option');
+                      option.setAttribute('value', file.name);
+                      option.textContent = file.name;
+                      select.appendChild(option);
+                  }
+                  if (np2.state === 'ready' && fddSelects[0].value === '') {
+                      fddSelects[0].value = file.name;
+                      np2.setFdd(0, file.name);
+                  }
+                  break;
+
+              case 'hdd':
+                  np2.setHdd(0, file.name);
+                  break;
+
+              case 'iso':
+                  np2.setCdrom(file.name, data);
+                  console.log(`ISO file ${file.name} mounted as CD-ROM.`);
+                  break;
           }
       }
 
@@ -111,19 +122,27 @@
           e.preventDefault();
           const files = e.dataTransfer.files;
           let readyToRun = false;
+
           for (const file of files) {
-              if (file.name.match(/\.(d88|88d|d98|98d|fdi|xdf|hdm|dup|2hd|tfd|img)$/i)) {
+              const fileName = file.name.toLowerCase();
+
+              if (fileName.match(/\.(d88|88d|d98|98d|fdi|xdf|hdm|dup|2hd|tfd|img)$/i)) {
                   await create_np2();
-                  await addImage(file, true);
+                  await addImage(file, 'fdd');
                   readyToRun = true;
-              } else if (file.name.match(/\.(thd|nhd|hdi)$/i)) {
+              } else if (fileName.match(/\.(thd|nhd|hdi)$/i)) {
                   await create_np2();
-                  await addImage(file, false);
+                  await addImage(file, 'hdd');
+                  readyToRun = true;
+              } else if (fileName.match(/\.iso$/i)) {
+                  await create_np2();
+                  await addImage(file, 'iso');
                   readyToRun = true;
               } else {
-                  console.log(`unrecognized image type: ${file.name}`);
+                  console.log(`Unrecognized image type: ${file.name}`);
               }
           }
+
           if (np2.state === 'ready' && readyToRun) {
               np2.run();
           }
