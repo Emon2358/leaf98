@@ -2,53 +2,45 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>DOSゲームプレイヤー</title>
-    <script src="https://cdn.jsdelivr.net/gh/js-dos/js-dos@latest/js-dos.js"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            text-align: center;
-        }
-        #dos {
-            border: 1px solid #000;
-            width: 800px;
-            height: 600px;
-            margin: 0 auto;
-        }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NP2 Emulator</title>
+    <script src="https://unpkg.com/np2-wasm/dist/elements.js" type="module"></script>
 </head>
 <body>
-    <h1>DOSゲームプレイヤー</h1>
-    <div id="dos"></div>
-    <input type="file" id="upload" accept=".hdi" />
-    <button id="start">ゲームを開始</button>
+    <h1>NP2 Emulator</h1>
+    
+    <label for="hdiFile">HDIファイルを選択:</label>
+    <input type="file" id="hdiFile" accept=".hdi" />
+    
+    <label for="dosFile">DOSファイルを選択:</label>
+    <input type="file" id="dosFile" accept=".exe,.com" />
+    
+    <button id="startEmulator">エミュレーターを起動</button>
+    
+    <PC-9801 id="emulator" cpu-clock="12.5MHz" memory="2MB"></PC-9801>
 
     <script>
-        let gameFile;
+        document.getElementById('startEmulator').addEventListener('click', async () => {
+            const hdiFileInput = document.getElementById('hdiFile');
+            const dosFileInput = document.getElementById('dosFile');
 
-        document.getElementById('upload').addEventListener('change', function(event) {
-            const file = event.target.files[0];
-            if (file) {
-                gameFile = file;
-                alert('ゲームファイルが選択されました: ' + file.name);
+            if (hdiFileInput.files.length === 0 || dosFileInput.files.length === 0) {
+                alert('HDIファイルとDOSファイルの両方を選択してください。');
+                return;
             }
-        });
 
-        document.getElementById('start').addEventListener('click', function() {
-            if (gameFile) {
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const arrayBuffer = e.target.result;
-                    const blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
-                    const url = URL.createObjectURL(blob);
-                    DOS.init({ canvas: document.getElementById('dos'), autostart: true });
-                    DOS.load(url);
-                };
-                reader.readAsArrayBuffer(gameFile);
-            } else {
-                alert('ゲームファイルをアップロードしてください。');
-            }
+            const hdiFile = hdiFileInput.files[0];
+            const dosFile = dosFileInput.files[0];
+
+            // HDIファイルをエミュレーターに設定
+            const emulator = document.getElementById('emulator');
+            emulator.setAttribute('hdi', URL.createObjectURL(hdiFile));
+
+            // DOSファイルをエミュレーターに設定
+            emulator.setAttribute('fdd1', URL.createObjectURL(dosFile));
+
+            // エミュレーターを起動
+            emulator.start();
         });
     </script>
 </body>
