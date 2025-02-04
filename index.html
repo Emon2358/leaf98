@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <title>NP2-wasm Demo</title>
+    <title>NP2-wasm Drag & Drop</title>
     <script type="module" src="https://unpkg.com/np2-wasm/dist/elements.js"></script>
     <style>
         .emscripten { padding-right: 0; margin-left: auto; margin-right: auto; display: block; }
@@ -12,141 +12,73 @@
         canvas { border: 0px none; image-rendering: pixelated; }
         #droparea {
             width: 100%;
-            height: 200px;
+            height: 150px;
             border: 2px dashed #ccc;
             text-align: center;
-            line-height: 200px;
+            line-height: 150px;
             font-size: 18px;
-            color: #555;
+            margin-bottom: 10px;
         }
     </style>
 </head>
 <body>
-
     <div class="emscripten_border" id="droparea">
-        <canvas class="emscripten" id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+        <p>ここにA〜Eの.d88ファイルをドラッグ＆ドロップ</p>
     </div>
-    
+    <PC-9801 id="np2" cpu-clock="12.5MHz" memory="2MB"></PC-9801>
+
     <div class="emscripten">
-        <input type="checkbox" id="resize"> Resize canvas
-        <input type="checkbox" id="pointerLock" checked> Lock/hide mouse pointer
-        &nbsp;&nbsp;&nbsp;
-        <input type="button" value="Fullscreen" onclick="Module.requestFullScreen(
-            document.getElementById('pointerLock').checked,
-            document.getElementById('resize').checked
-        )">
+        <p>FDDの設定</p>
+        <label>FDD1: <select id="fdd1"><option value="">(ejected)</option></select></label>
+        <label>FDD2: <select id="fdd2"><option value="">(ejected)</option></select></label>
+        <label>FDD3: <select id="fdd3"><option value="">(ejected)</option></select></label>
+        <label>FDD4: <select id="fdd4"><option value="">(ejected)</option></select></label>
+        <label>FDD5: <select id="fdd5"><option value="">(ejected)</option></select></label>
     </div>
 
-    <div>
-        FDD1: <select id="fdd1"><option value="">(ejected)</option></select>
-        FDD2: <select id="fdd2"><option value="">(ejected)</option></select>
-        FDD3: <select id="fdd3"><option value="">(ejected)</option></select>
-        FDD4: <select id="fdd4"><option value="">(ejected)</option></select>
-        FDD5: <select id="fdd5"><option value="">(ejected)</option></select>
-        HDD: <select id="hdd"><option value="">(ejected)</option></select>
-    </div>
-
-    <script type="module">
-        import { NP21 } from "https://unpkg.com/np2-wasm/dist/np2-wasm.js";
-
-        const canvas = document.getElementById('canvas');
+    <script>
+        const np2 = document.getElementById('np2');
         const droparea = document.getElementById('droparea');
-        const fddSelects = ['fdd1', 'fdd2', 'fdd3', 'fdd4', 'fdd5'].map(id => document.getElementById(id));
-        const hddSelect = document.getElementById('hdd');
-        let np2;
-
-        async function create_np2() {
-            if (np2) return;
-            np2 = await NP21.create({
-                canvas: canvas,
-                clk_mult: 8,
-                Latencys: 120,
-                onDiskChange: (name) => console.log(name + ' changed'),
-                onExit: () => { np2.reset(); }
-            });
-        }
-
-        function drawInitialContent() {
-            canvas.width = 640;
-            canvas.height = 400;
-            const ctx = canvas.getContext('2d');
-            ctx.font = '20px Arial';
-
-            const text = 'Drag & drop FDD/HDD disk images here!';
-            const textWidth = ctx.measureText(text).width;
-            ctx.fillStyle = 'black';
-            ctx.fillText(text, (canvas.width - textWidth) / 2, canvas.height / 2);
-        }
-
-        async function addImage(file, is_fdd) {
-            np2.addDiskImage(file.name, new Uint8Array(await file.arrayBuffer()));
-            if (is_fdd) {
-                for (const select of fddSelects) {
-                    let option = document.createElement('option');
-                    option.value = file.name;
-                    option.textContent = file.name;
-                    select.appendChild(option);
-                }
-                if (np2.state === 'ready' && fddSelects[0].value === '') {
-                    fddSelects[0].value = file.name;
-                    np2.setFdd(0, file.name);
-                }
-            } else {
-                let option = document.createElement('option');
-                option.value = file.name;
-                option.textContent = file.name;
-                hddSelect.appendChild(option);
-                np2.setHdd(0, file.name);
-            }
-        }
+        const fddSelects = [1, 2, 3, 4, 5].map(i => document.getElementById('fdd' + i));
 
         droparea.addEventListener('dragover', (e) => {
             e.preventDefault();
-            droparea.style.borderColor = "#00f";
-        });
-
-        droparea.addEventListener('dragleave', () => {
-            droparea.style.borderColor = "#ccc";
+            e.dataTransfer.dropEffect = 'copy';
         });
 
         droparea.addEventListener('drop', async (e) => {
             e.preventDefault();
-            droparea.style.borderColor = "#ccc";
+            const files = Array.from(e.dataTransfer.files).slice(0, 5); // 最大5つのファイルを取得
 
-            const files = Array.from(e.dataTransfer.files);
-            let readyToRun = false;
-            
-            for (const file of files) {
-                if (file.name.match(/\.(d88|88d|d98|98d|fdi|xdf|hdm|dup|2hd|tfd|img)$/i)) {
-                    await create_np2();
-                    await addImage(file, true);
-                    readyToRun = true;
-                } else if (file.name.match(/\.(thd|nhd|hdi)$/i)) {
-                    await create_np2();
-                    await addImage(file, false);
-                    readyToRun = true;
-                } else {
-                    console.log(`unrecognized image type: ${file.name}`);
-                }
-            }
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const reader = new FileReader();
 
-            if (np2.state === 'ready' && readyToRun) {
-                np2.run();
+                reader.onload = function(event) {
+                    const data = new Uint8Array(event.target.result);
+                    const fileName = file.name;
+
+                    console.log(`FDD${i + 1} に ${fileName} をセット`);
+                    np2.setAttribute(`fdd${i + 1}`, fileName);
+
+                    // 選択リストに追加
+                    let option = document.createElement('option');
+                    option.value = fileName;
+                    option.textContent = fileName;
+                    fddSelects[i].appendChild(option);
+                    fddSelects[i].value = fileName;
+                };
+
+                reader.readAsArrayBuffer(file);
             }
         });
 
-        for (let i = 0; i < fddSelects.length; i++) {
-            fddSelects[i].addEventListener('change', async (ev) => {
-                np2.setFdd(i, ev.target.value === '' ? null : ev.target.value);
+        // ドライブの選択変更時
+        fddSelects.forEach((select, i) => {
+            select.addEventListener('change', () => {
+                np2.setAttribute(`fdd${i + 1}`, select.value || '');
             });
-        }
-
-        hddSelect.addEventListener('change', async (ev) => {
-            np2.setHdd(0, ev.target.value === '' ? null : ev.target.value);
         });
-
-        drawInitialContent();
     </script>
-
 </body>
 </html>
